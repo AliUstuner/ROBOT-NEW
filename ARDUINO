@@ -1,0 +1,47 @@
+#include <Servo.h>
+
+Servo motorLeft;
+Servo motorRight;
+
+void setup() {
+  Serial.begin(9600);
+
+  // Connect PWM to motor drivers
+  motorLeft.attach(9);   // Left motor on pin 9
+  motorRight.attach(10); // Right motor on pin 10
+
+  stopMotors(); // start with motors stopped
+}
+
+void loop() {
+  if (Serial.available()) {
+    char cmd = Serial.read();
+
+    switch (cmd) {
+      case 'F':  // Forward
+        motorLeft.writeMicroseconds(2000);
+        motorRight.writeMicroseconds(2000);
+        break;
+      case 'B':  // Backward
+        motorLeft.writeMicroseconds(1000);
+        motorRight.writeMicroseconds(1000);
+        break;
+      case 'L':  // Turn Left
+        motorLeft.writeMicroseconds(1500);
+        motorRight.writeMicroseconds(2000);
+        break;
+      case 'R':  // Turn Right
+        motorLeft.writeMicroseconds(2000);
+        motorRight.writeMicroseconds(1500);
+        break;
+      case 'S':  // Stop
+        stopMotors();
+        break;
+    }
+  }
+}
+
+void stopMotors() {
+  motorLeft.writeMicroseconds(1500);
+  motorRight.writeMicroseconds(1500);
+}
