@@ -1,0 +1,23 @@
+from flask import Flask, request, jsonify, send_from_directory
+import serial
+
+app = Flask(__name__)
+
+# Adjust the port if needed
+arduino = serial.Serial('/dev/ttyACM0', 9600)
+
+@app.route('/')
+def index():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/control', methods=['POST'])
+def control():
+    data = request.get_json()
+    cmd = data.get("command", "")
+    if cmd in ['F', 'B', 'L', 'R', 'S']:
+        arduino.write(cmd.encode())
+        return jsonify({"status": "ok", "command": cmd})
+    return jsonify({"status": "error"})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=80)
