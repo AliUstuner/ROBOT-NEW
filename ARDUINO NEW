@@ -1,14 +1,18 @@
 #include <Servo.h>
 
+// Create Servo objects for motor controllers
 Servo motorLeft;
 Servo motorRight;
 
 void setup() {
   Serial.begin(9600);
-  motorLeft.attach(9);
-  motorRight.attach(10);
-  stopMotors();
-  while (Serial.available()) Serial.read();  // flush old commands
+
+  // Attach PWM signal pins to motor controllers
+  motorLeft.attach(9);    // Left motor on pin D9
+  motorRight.attach(10);  // Right motor on pin D10
+
+  stopMotors();  // make sure motors are stopped initially
+  while (Serial.available()) Serial.read();  // clear old commands
 }
 
 void loop() {
@@ -23,23 +27,27 @@ void loop() {
     }
 
     switch (cmd) {
-      case 'F':
-        motorLeft.writeMicroseconds(map(speed, 0, 255, 1500, 2000));
-        motorRight.writeMicroseconds(map(speed, 0, 255, 1500, 2000));
-        break;
-      case 'B':
-        motorLeft.writeMicroseconds(map(speed, 0, 255, 1500, 1000));
+      case 'F':  // FORWARD
+        motorLeft.writeMicroseconds(map(speed, 0, 255, 1500, 1000));  // reverse
         motorRight.writeMicroseconds(map(speed, 0, 255, 1500, 1000));
         break;
-      case 'L':
-        motorLeft.writeMicroseconds(1500);
+
+      case 'B':  // BACKWARD
+        motorLeft.writeMicroseconds(map(speed, 0, 255, 1500, 2000));  // forward
         motorRight.writeMicroseconds(map(speed, 0, 255, 1500, 2000));
         break;
-      case 'R':
-        motorLeft.writeMicroseconds(map(speed, 0, 255, 1500, 2000));
-        motorRight.writeMicroseconds(1500);
+
+      case 'L':  // TURN LEFT
+        motorLeft.writeMicroseconds(1500);  // left motor stop
+        motorRight.writeMicroseconds(map(speed, 0, 255, 1500, 1000)); // right reverse
         break;
-      case 'S':
+
+      case 'R':  // TURN RIGHT
+        motorLeft.writeMicroseconds(map(speed, 0, 255, 1500, 1000));  // left reverse
+        motorRight.writeMicroseconds(1500);  // right motor stop
+        break;
+
+      case 'S':  // STOP
         stopMotors();
         break;
     }
