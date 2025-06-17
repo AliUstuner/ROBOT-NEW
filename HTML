@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Robot Controller</title>
+  <script>
+    function sendCommand(cmd) {
+      fetch("/control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command: cmd })
+      });
+    }
+  </script>
+</head>
+<body style="text-align:center; margin-top:50px;">
+  <button onclick="sendCommand('F')">Forward</button><br><br>
+  <button onclick="sendCommand('L')">Left</button>
+  <button onclick="sendCommand('S')">Stop</button>
+  <button onclick="sendCommand('R')">Right</button><br><br>
+  <button onclick="sendCommand('B')">Backward</button>
+</body>
+</html>
