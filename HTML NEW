@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Robot Controller</title>
+  <script>
+    let interval;
+    let speed = 255;
+
+    function sendCommand(cmd) {
+      fetch("/control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command: cmd, speed: speed })
+      });
+    }
+
+    function startSending(cmd) {
+      sendCommand(cmd);
+      interval = setInterval(() => sendCommand(cmd), 200);
+    }
+
+    function stopSending() {
+      clearInterval(interval);
+      sendCommand('S');
+    }
+
+    function updateSpeed(val) {
+      speed = parseInt(val);
+      document.getElementById("speedDisplay").innerText = speed;
+    }
+  </script>
+</head>
+<body style="text-align:center; margin-top:30px;">
+  <h2>Speed: <span id="speedDisplay">255</span></h2>
+  <input type="range" min="0" max="255" value="255" oninput="updateSpeed(this.value)" style="width: 80%;"><br><br>
+
+  <button onmousedown="startSending('F')" onmouseup="stopSending()" ontouchstart="startSending('F')" ontouchend="stopSending()">Forward</button><br><br>
+  <button onmousedown="startSending('L')" onmouseup="stopSending()" ontouchstart="startSending('L')" ontouchend="stopSending()">Left</button>
+  <button onmousedown="startSending('S')" onmouseup="stopSending()" ontouchstart="startSending('S')" ontouchend="stopSending()">Stop</button>
+  <button onmousedown="startSending('R')" onmouseup="stopSending()" ontouchstart="startSending('R')" ontouchend="stopSending()">Right</button><br><br>
+  <button onmousedown="startSending('B')" onmouseup="stopSending()" ontouchstart="startSending('B')" ontouchend="stopSending()">Backward</button>
+</body>
+</html>
