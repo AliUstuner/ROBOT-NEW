@@ -1,0 +1,12 @@
+@app.route('/control', methods=['POST'])
+def control():
+    data = request.get_json()
+    cmd = data.get("command", "")
+    speed = data.get("speed", 255)
+
+    if cmd in ['F', 'B', 'L', 'R', 'S']:
+        message = f"{cmd}:{speed}\n"
+        arduino.write(message.encode())
+        return jsonify({"status": "ok", "command": cmd, "speed": speed})
+
+    return jsonify({"status": "error", "message": "invalid command"})
