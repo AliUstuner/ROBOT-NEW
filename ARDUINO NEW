@@ -1,0 +1,52 @@
+#include <Servo.h>
+
+Servo motorLeft;
+Servo motorRight;
+
+void setup() {
+  Serial.begin(9600);
+  motorLeft.attach(9);
+  motorRight.attach(10);
+  stopMotors();
+  while (Serial.available()) Serial.read();  // flush old commands
+}
+
+void loop() {
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n'); // e.g. "F:180"
+    char cmd = input.charAt(0);
+    int colonIndex = input.indexOf(':');
+    int speed = 255;
+
+    if (colonIndex != -1) {
+      speed = input.substring(colonIndex + 1).toInt();
+    }
+
+    switch (cmd) {
+      case 'F':
+        motorLeft.writeMicroseconds(map(speed, 0, 255, 1500, 2000));
+        motorRight.writeMicroseconds(map(speed, 0, 255, 1500, 2000));
+        break;
+      case 'B':
+        motorLeft.writeMicroseconds(map(speed, 0, 255, 1500, 1000));
+        motorRight.writeMicroseconds(map(speed, 0, 255, 1500, 1000));
+        break;
+      case 'L':
+        motorLeft.writeMicroseconds(1500);
+        motorRight.writeMicroseconds(map(speed, 0, 255, 1500, 2000));
+        break;
+      case 'R':
+        motorLeft.writeMicroseconds(map(speed, 0, 255, 1500, 2000));
+        motorRight.writeMicroseconds(1500);
+        break;
+      case 'S':
+        stopMotors();
+        break;
+    }
+  }
+}
+
+void stopMotors() {
+  motorLeft.writeMicroseconds(1500);
+  motorRight.writeMicroseconds(1500);
+}
