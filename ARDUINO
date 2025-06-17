@@ -1,38 +1,47 @@
+#include <Servo.h>
+
+Servo motorLeft;
+Servo motorRight;
+
+void setup() {
+  Serial.begin(9600);
+
+  // Connect PWM to motor drivers
+  motorLeft.attach(9);   // Left motor on pin 9
+  motorRight.attach(10); // Right motor on pin 10
+
+  stopMotors(); // start with motors stopped
+}
+
 void loop() {
   if (Serial.available()) {
-    String input = Serial.readStringUntil('\n'); // e.g. "F:180"
-    char cmd = input.charAt(0);
-    int colonIndex = input.indexOf(':');
-    int speed = 255;
-
-    if (colonIndex != -1) {
-      speed = input.substring(colonIndex + 1).toInt();
-    }
+    char cmd = Serial.read();
 
     switch (cmd) {
-      case 'F':  // FORWARD
-        motorLeft.writeMicroseconds(map(speed, 0, 255, 1500, 1000));  // reverse PWM
-        motorRight.writeMicroseconds(map(speed, 0, 255, 1500, 1000));
+      case 'F':  // Forward
+        motorLeft.writeMicroseconds(2000);
+        motorRight.writeMicroseconds(2000);
         break;
-
-      case 'B':  // BACKWARD
-        motorLeft.writeMicroseconds(map(speed, 0, 255, 1500, 2000));  // forward PWM
-        motorRight.writeMicroseconds(map(speed, 0, 255, 1500, 2000));
+      case 'B':  // Backward
+        motorLeft.writeMicroseconds(1000);
+        motorRight.writeMicroseconds(1000);
         break;
-
-      case 'L':  // TURN LEFT
-        motorLeft.writeMicroseconds(1500);  // stop left
-        motorRight.writeMicroseconds(map(speed, 0, 255, 1500, 1000)); // reverse right
+      case 'L':  // Turn Left
+        motorLeft.writeMicroseconds(1500);
+        motorRight.writeMicroseconds(2000);
         break;
-
-      case 'R':  // TURN RIGHT
-        motorLeft.writeMicroseconds(map(speed, 0, 255, 1500, 1000));  // reverse left
-        motorRight.writeMicroseconds(1500);  // stop right
+      case 'R':  // Turn Right
+        motorLeft.writeMicroseconds(2000);
+        motorRight.writeMicroseconds(1500);
         break;
-
-      case 'S':  // STOP
+      case 'S':  // Stop
         stopMotors();
         break;
     }
   }
+}
+
+void stopMotors() {
+  motorLeft.writeMicroseconds(1500);
+  motorRight.writeMicroseconds(1500);
 }
