@@ -1,0 +1,57 @@
+import pygame
+import serial
+import time
+
+# Arduino bağlantısı
+arduino = serial.Serial('/dev/ttyACM0', 9600)
+time.sleep(2)
+
+# Gamepad başlat
+pygame.init()
+pygame.joystick.init()
+joystick = pygame.joystick.Joystick(0)
+joystick.init()
+
+print("Gamepad ile robot kontrolü başladı...")
+
+# Başlangıç hızı (default = %50)
+base_speed = 127
+
+def send(cmd, speed):
+    message = f"{cmd}:{speed}\n"
+    arduino.write(message.encode())
+
+while True:
+    pygame.event.pump()
+    x = joystick.get_axis(0)
+    y = joystick.get_axis(1)
+
+    # Tuşlar:
+    btn_b = joystick.get_button(1)  # B tuşu → durdur
+    btn_a = joystick.get_button(0)  # A tuşu → %20
+    btn_x = joystick.get_button(2)  # X tuşu → %35
+    btn_y = joystick.get_button(3)  # Y tuşu → %50
+
+    # Hız seviyesini belirle
+    if btn_a:
+        base_speed = 51
+    elif btn_x:
+        base_speed = 89
+    elif btn_y:
+        base_speed = 127
+
+    # Komut gönder
+    if btn_b:
+        send('S', 0)
+    elif y < -0.5:
+        send('F', base_speed)
+    elif y > 0.5:
+        send('B', base_speed)
+    elif x < -0.5:
+        send('L', base_speed)
+    elif x > 0.5:
+        send('R', base_speed)
+    else:
+        send('S', 0)
+
+    time.sleep(0.1)
