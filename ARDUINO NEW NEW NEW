@@ -1,0 +1,70 @@
+import pygame
+import serial
+import time
+
+# Arduino bağlantısı (gerekirse ttyUSB0 yap)
+arduino = serial.Serial('/dev/ttyACM0', 9600)
+time.sleep(2)
+
+# Gamepad başlat
+pygame.init()
+pygame.joystick.init()
+joystick = pygame.joystick.Joystick(0)
+joystick.init()
+
+print("Gamepad ile robot kontrolü başladı...")
+
+# Başlangıç hızı
+base_speed = 127  # %50
+
+def send(cmd, speed):
+    message = f"{cmd}:{speed}\n"
+    arduino.write(message.encode())
+
+while True:
+    pygame.event.pump()
+
+    # Analog eksenleri oku
+    x = joystick.get_axis(0)  # sola/sağa
+    y = joystick.get_axis(1)  # ileri/geri
+
+    # Tuşlar
+    btn_b = joystick.get_button(1)  # B = durdur
+    btn_a = joystick.get_button(0)  # A = %20
+    btn_x = joystick.get_button(2)  # X = %35
+    btn_y = joystick.get_button(3)  # Y = %50
+
+    # Hız ayarı
+    if btn_a:
+        base_speed = 51
+    elif btn_x:
+        base_speed = 89
+    elif btn_y:
+        base_speed = 127
+
+    # Durdurulmuş mu?
+    if btn_b:
+        send('S', 0)
+    elif y < -0.5:
+        if x < -0.5:
+            send('L', base_speed)  # ileri + sola
+        elif x > 0.5:
+            send('R', base_speed)  # ileri + sağa
+        else:
+            send('F', base_speed)  # düz ileri
+    elif y > 0.5:
+        if x < -0.5:
+            send('L', base_speed)  # geri + sola
+        elif x > 0.5:
+            send('R', base_speed)  # geri + sağa
+        else:
+            send('B', base_speed)  # düz geri
+    elif abs(x) > 0.5:
+        if x < 0:
+            send('L', base_speed)
+        else:
+            send('R', base_speed)
+    else:
+        send('S', 0)
+
+    time.sleep(0.1)
