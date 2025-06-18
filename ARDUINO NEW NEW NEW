@@ -1,70 +1,76 @@
-import pygame
-import serial
-import time
+#include <Servo.h>
 
-# Arduino bağlantısı (gerekirse ttyUSB0 yap)
-arduino = serial.Serial('/dev/ttyACM0', 9600)
-time.sleep(2)
+// Servo motor objects
+Servo motorLeft;
+Servo motorRight;
 
-# Gamepad başlat
-pygame.init()
-pygame.joystick.init()
-joystick = pygame.joystick.Joystick(0)
-joystick.init()
+// PWM ramping variables
+int targetLeft = 1500;
+int targetRight = 1500;
+int currentLeft = 1500;
+int currentRight = 1500;
 
-print("Gamepad ile robot kontrolü başladı...")
+void setup() {
+  Serial.begin(9600);
+  motorLeft.attach(9);    // Left motor PWM pin
+  motorRight.attach(10);  // Right motor PWM pin
+  stopMotors();
+  while (Serial.available()) Serial.read();  // Clear buffer
+}
 
-# Başlangıç hızı
-base_speed = 127  # %50
+void loop() {
+  // Read serial command
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n'); // e.g. "F:127"
+    char cmd = input.charAt(0);
+    int colonIndex = input.indexOf(':');
+    int speed = 255;
 
-def send(cmd, speed):
-    message = f"{cmd}:{speed}\n"
-    arduino.write(message.encode())
+    if (colonIndex != -1) {
+      speed = input.substring(colonIndex + 1).toInt();
+    }
 
-while True:
-    pygame.event.pump()
+    // Map command to motor behavior
+    switch (cmd) {
+      case 'F':
+        targetLeft = map(speed, 0, 255, 1500, 1000);
+        targetRight = map(speed, 0, 255, 1500, 1000);
+        break;
+      case 'B':
+        targetLeft = map(speed, 0, 255, 1500, 2000);
+        targetRight = map(speed, 0, 255, 1500, 2000);
+        break;
+      case 'L':
+        targetLeft = 1500;
+        targetRight = map(speed, 0, 255, 1500, 1000);
+        break;
+      case 'R':
+        targetLeft = map(speed, 0, 255, 1500, 1000);
+        targetRight = 1500;
+        break;
+      case 'S':
+        targetLeft = 1500;
+        targetRight = 1500;
+        break;
+    }
+  }
 
-    # Analog eksenleri oku
-    x = joystick.get_axis(0)  # sola/sağa
-    y = joystick.get_axis(1)  # ileri/geri
+  // Smoothly ramp PWM
+  if (currentLeft < targetLeft) currentLeft += 5;
+  else if (currentLeft > targetLeft) currentLeft -= 5;
 
-    # Tuşlar
-    btn_b = joystick.get_button(1)  # B = durdur
-    btn_a = joystick.get_button(0)  # A = %20
-    btn_x = joystick.get_button(2)  # X = %35
-    btn_y = joystick.get_button(3)  # Y = %50
+  if (currentRight < targetRight) currentRight += 5;
+  else if (currentRight > targetRight) currentRight -= 5;
 
-    # Hız ayarı
-    if btn_a:
-        base_speed = 51
-    elif btn_x:
-        base_speed = 89
-    elif btn_y:
-        base_speed = 127
+  motorLeft.writeMicroseconds(currentLeft);
+  motorRight.writeMicroseconds(currentRight);
 
-    # Durdurulmuş mu?
-    if btn_b:
-        send('S', 0)
-    elif y < -0.5:
-        if x < -0.5:
-            send('L', base_speed)  # ileri + sola
-        elif x > 0.5:
-            send('R', base_speed)  # ileri + sağa
-        else:
-            send('F', base_speed)  # düz ileri
-    elif y > 0.5:
-        if x < -0.5:
-            send('L', base_speed)  # geri + sola
-        elif x > 0.5:
-            send('R', base_speed)  # geri + sağa
-        else:
-            send('B', base_speed)  # düz geri
-    elif abs(x) > 0.5:
-        if x < 0:
-            send('L', base_speed)
-        else:
-            send('R', base_speed)
-    else:
-        send('S', 0)
+  delay(20);
+}
 
-    time.sleep(0.1)
+void stopMotors() {
+  currentLeft = targetLeft = 1500;
+  currentRight = targetRight = 1500;
+  motorLeft.writeMicroseconds(1500);
+  motorRight.writeMicroseconds(1500);
+}
