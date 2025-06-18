@@ -1,0 +1,73 @@
+#include <Servo.h>
+
+Servo motorLeft;
+Servo motorRight;
+
+// PWM değerleri
+int targetLeft = 1500;
+int targetRight = 1500;
+int currentLeft = 1500;
+int currentRight = 1500;
+
+void setup() {
+  Serial.begin(9600);
+  motorLeft.attach(9);    // Sol motor
+  motorRight.attach(10);  // Sağ motor
+  stopMotors();
+  while (Serial.available()) Serial.read();  // Seri tamponu temizle
+}
+
+void loop() {
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n');
+    char cmd = input.charAt(0);
+    int colonIndex = input.indexOf(':');
+    int speed = 255;
+
+    if (colonIndex != -1) {
+      speed = input.substring(colonIndex + 1).toInt();
+    }
+
+    switch (cmd) {
+      case 'F':
+        targetLeft = map(speed, 0, 255, 1500, 1000);
+        targetRight = map(speed, 0, 255, 1500, 1000);
+        break;
+      case 'B':
+        targetLeft = map(speed, 0, 255, 1500, 2000);
+        targetRight = map(speed, 0, 255, 1500, 2000);
+        break;
+      case 'L':
+        targetLeft = 1500;
+        targetRight = map(speed, 0, 255, 1500, 1000);
+        break;
+      case 'R':
+        targetLeft = map(speed, 0, 255, 1500, 1000);
+        targetRight = 1500;
+        break;
+      case 'S':
+        targetLeft = 1500;
+        targetRight = 1500;
+        break;
+    }
+  }
+
+  // PWM rampası (yumuşak geçiş)
+  if (currentLeft < targetLeft) currentLeft += 5;
+  else if (currentLeft > targetLeft) currentLeft -= 5;
+
+  if (currentRight < targetRight) currentRight += 5;
+  else if (currentRight > targetRight) currentRight -= 5;
+
+  motorLeft.writeMicroseconds(currentLeft);
+  motorRight.writeMicroseconds(currentRight);
+
+  delay(20);  // Ramp hızı
+}
+
+void stopMotors() {
+  currentLeft = targetLeft = 1500;
+  currentRight = targetRight = 1500;
+  motorLeft.writeMicroseconds(1500);
+  motorRight.writeMicroseconds(1500);
+}
