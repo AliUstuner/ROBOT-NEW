@@ -1,0 +1,40 @@
+sudo nano /etc/systemd/system/robot-controller.service
+
+
+
+[Unit]
+Description=Gamepad Robot Controller
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/admin/gamepad-control.py
+WorkingDirectory=/home/admin
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=admin
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+
+
+
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl enable robot-controller.service
+sudo systemctl start robot-controller.service
+
+
+
+
+sudo systemctl status robot-controller.service
+
+
+
+
+
+
+sudo reboot
