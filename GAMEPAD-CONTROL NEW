@@ -1,0 +1,63 @@
+import pygame
+import serial
+import time
+
+# Connect to Arduino (adjust port if needed)
+arduino = serial.Serial('/dev/ttyACM0', 9600)
+time.sleep(2)
+
+# Initialize gamepad
+pygame.init()
+pygame.joystick.init()
+joystick = pygame.joystick.Joystick(0)
+joystick.init()
+
+print("Gamepad control started.")
+
+# Default speed: 50%
+base_speed = 127
+
+def send(cmd, speed):
+    message = f"{cmd}:{speed}\n"
+    arduino.write(message.encode())
+
+while True:
+    pygame.event.pump()
+
+    x = joystick.get_axis(0)  # left/right
+    y = joystick.get_axis(1)  # forward/back
+
+    # Speed control buttons
+    if joystick.get_button(0):  # A = 20%
+        base_speed = 51
+    elif joystick.get_button(2):  # X = 35%
+        base_speed = 89
+    elif joystick.get_button(3):  # Y = 50%
+        base_speed = 127
+
+    # Stop button
+    if joystick.get_button(1):  # B = STOP
+        send('S', 0)
+    elif y < -0.5:
+        if x < -0.5:
+            send('L', base_speed)
+        elif x > 0.5:
+            send('R', base_speed)
+        else:
+            send('F', base_speed)
+    elif y > 0.5:
+        if x < -0.5:
+            send('L', base_speed)
+        elif x > 0.5:
+            send('R', base_speed)
+        else:
+            send('B', base_speed)
+    elif abs(x) > 0.5:
+        if x < 0:
+            send('L', base_speed)
+        else:
+            send('R', base_speed)
+    else:
+        send('S', 0)
+
+    time.sleep(0.1)
