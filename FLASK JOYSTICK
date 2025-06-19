@@ -1,0 +1,30 @@
+from flask import Flask, request, jsonify, render_template
+import serial
+
+app = Flask(__name__)
+arduino = serial.Serial('/dev/ttyACM0', 9600)
+MODE_FILE = "/home/pi/robot-mode.txt"
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/command', methods=['POST'])
+def command():
+    data = request.get_json()
+    cmd = data.get("cmd")
+    speed = data.get("speed", 127)
+    message = f"{cmd}:{speed}\n"
+    arduino.write(message.encode())
+    return jsonify({"status": "OK"})
+
+@app.route('/set-mode', methods=['POST'])
+def set_mode():
+    data = request.get_json()
+    mode = data.get("mode", "JOYSTICK")
+    with open(MODE_FILE, "w") as f:
+        f.write(mode)
+    return jsonify({"mode": mode})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
