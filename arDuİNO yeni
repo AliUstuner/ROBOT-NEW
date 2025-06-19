@@ -1,0 +1,86 @@
+#include <Servo.h>
+
+Servo motorLeft;
+Servo motorRight;
+
+int targetLeft = 1500;
+int targetRight = 1500;
+int currentLeft = 1500;
+int currentRight = 1500;
+
+unsigned long lastCommandTime = 0;  // for optional timeout
+const unsigned long timeoutDuration = 2000;  // 2 seconds
+
+void setup() {
+  Serial.begin(9600);
+  motorLeft.attach(9);
+  motorRight.attach(10);
+
+  motorLeft.writeMicroseconds(1500);
+  motorRight.writeMicroseconds(1500);
+}
+
+void loop() {
+  // Read serial command
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n');
+    lastCommandTime = millis(); // reset timeout
+
+    input.trim(); // remove whitespace
+    if (input.startsWith("D:")) {
+      int sep = input.indexOf(':', 2);
+      int leftVal = input.substring(2, sep).toInt();
+      int rightVal = input.substring(sep + 1).toInt();
+
+      targetLeft = map(leftVal, 0, 255, 1000, 2000);
+      targetRight = map(rightVal, 0, 255, 1000, 2000);
+    }
+    else if (input.length() >= 3) {
+      char cmd = input.charAt(0);
+      int value = input.substring(2).toInt();
+
+      switch (cmd) {
+        case 'F':
+          targetLeft = map(value, 0, 255, 1500, 1000);  // forward
+          targetRight = map(value, 0, 255, 1500, 1000);
+          break;
+        case 'B':
+          targetLeft = map(value, 0, 255, 1500, 2000);  // backward
+          targetRight = map(value, 0, 255, 1500, 2000);
+          break;
+        case 'L':
+          targetLeft = map(value, 0, 255, 1500, 2000);  // spin left
+          targetRight = map(value, 0, 255, 1500, 1000);
+          break;
+        case 'R':
+          targetLeft = map(value, 0, 255, 1500, 1000);  // spin right
+          targetRight = map(value, 0, 255, 1500, 2000);
+          break;
+        case 'S':
+          targetLeft = 1500;
+          targetRight = 1500;
+          break;
+      }
+    }
+  }
+
+  // Optional: timeout to stop robot if no signal
+  /*
+  if (millis() - lastCommandTime > timeoutDuration) {
+    targetLeft = 1500;
+    targetRight = 1500;
+  }
+  */
+
+  // Smooth PWM ramping
+  if (currentLeft < targetLeft) currentLeft += 5;
+  else if (currentLeft > targetLeft) currentLeft -= 5;
+
+  if (currentRight < targetRight) currentRight += 5;
+  else if (currentRight > targetRight) currentRight -= 5;
+
+  motorLeft.writeMicroseconds(currentLeft);
+  motorRight.writeMicroseconds(currentRight);
+
+  delay(20);
+}
