@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Robot Control Panel</title>
+  <style>
+    button {
+      padding: 10px 20px;
+      font-size: 20px;
+      margin: 5px;
+    }
+    .controls {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .camera-section {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 30px;
+    }
+    .camera {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1 style="text-align:center;">🤖 Robot Web Control</h1>
+
+  <div class="controls">
+    <button onmousedown="send('F')" onmouseup="send('S')">↑ Forward</button><br>
+    <button onmousedown="send('L')" onmouseup="send('S')">← Left</button>
+    <button onmousedown="send('S')">Stop</button>
+    <button onmousedown="send('R')" onmouseup="send('S')">→ Right</button><br>
+    <button onmousedown="send('B')" onmouseup="send('S')">↓ Backward</button>
+  </div>
+
+  <div style="text-align:center; margin-top:20px;">
+    <label>Speed:</label>
+    <input type="range" min="0" max="255" value="200" id="speedSlider">
+    <span id="speedVal">200</span>
+  </div>
+
+  <div class="camera-section">
+    <div class="camera">
+      <h3>🔴 Front Camera</h3>
+      <img src="{{ url_for('video_feed') }}" width="400" height="300">
+    </div>
+
+    <div class="camera">
+      <h3>🔵 Rear Camera</h3>
+      <img src="{{ url_for('rear_feed') }}" width="400" height="300">
+    </div>
+  </div>
+
+  <script>
+    const slider = document.getElementById("speedSlider");
+    const speedVal = document.getElementById("speedVal");
+
+    slider.oninput = function () {
+      speedVal.innerText = this.value;
+    }
+
+    function send(cmd) {
+      fetch('/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cmd: cmd, speed: parseInt(slider.value) })
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      switch (e.key) {
+        case 'ArrowUp': send('F'); break;
+        case 'ArrowDown': send('B'); break;
+        case 'ArrowLeft': send('L'); break;
+        case 'ArrowRight': send('R'); break;
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        send('S');
+      }
+    });
+  </script>
+</body>
+</html>
