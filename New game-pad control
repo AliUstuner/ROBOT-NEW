@@ -1,0 +1,61 @@
+import pygame
+import serial
+import time
+
+MODE_FILE = "/home/pi/robot-mode.txt"
+
+def get_mode():
+    try:
+        with open(MODE_FILE, "r") as f:
+            return f.read().strip()
+    except:
+        return "JOYSTICK"
+
+def clamp(val, min_val=0, max_val=255):
+    return max(min(int(val), max_val), min_val)
+
+def send_dual(left, right):
+    if get_mode() != "JOYSTICK":
+        return
+    left = clamp(left)
+    right = clamp(right)
+    command = f"D:{left}:{right}\n"
+    print("Sending:", command.strip())
+    arduino.write(command.encode())
+
+# Connect to Arduino
+arduino = serial.Serial('/dev/ttyACM0', 9600)
+time.sleep(2)  # Wait for Arduino to reset
+
+# Init gamepad
+pygame.init()
+pygame.joystick.init()
+joystick = pygame.joystick.Joystick(0)
+joystick.init()
+
+# Default speed
+speed_scale = 127  # %50
+
+while True:
+    pygame.event.pump()
+    
+    x = joystick.get_axis(0)  # left/right
+    y = -joystick.get_axis(1)  # forward/backward (inverted)
+
+    # Speed control
+    if joystick.get_button(0):      # A
+        speed_scale = 51
+    elif joystick.get_button(2):    # X
+        speed_scale = 89
+    elif joystick.get_button(3):    # Y
+        speed_scale = 127
+
+    if joystick.get_button(1):      # B = STOP
+        send_dual(0, 0)
+    else:
+        # Differential drive formula
+        left = (y - x) * speed_scale + 127
+        right = (y + x) * speed_scale + 127
+        send_dual(left, right)
+
+    time.sleep(0.1)
