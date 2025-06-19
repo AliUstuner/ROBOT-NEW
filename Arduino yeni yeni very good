@@ -1,0 +1,89 @@
+#include <Servo.h>
+
+Servo motorLeft;
+Servo motorRight;
+
+int targetLeft = 1500;
+int targetRight = 1500;
+int currentLeft = 1500;
+int currentRight = 1500;
+
+unsigned long lastCommandTime = 0;
+const unsigned long timeoutDuration = 2000; // 2 seconds
+
+void setup() {
+  Serial.begin(9600);
+  motorLeft.attach(9);
+  motorRight.attach(10);
+  motorLeft.writeMicroseconds(1500);
+  motorRight.writeMicroseconds(1500);
+}
+
+void loop() {
+  // Receive serial input
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n');
+    input.trim();  // Remove extra spaces
+    lastCommandTime = millis(); // reset timeout
+
+    if (input.startsWith("D:")) {
+      // Joystick command: D:left:right
+      int sep = input.indexOf(':', 2);
+      int leftVal = input.substring(2, sep).toInt();
+      int rightVal = input.substring(sep + 1).toInt();
+      targetLeft = map(leftVal, 0, 255, 1000, 2000);
+      targetRight = map(rightVal, 0, 255, 1000, 2000);
+    } else if (input.length() >= 3) {
+      // Web/keyboard command: F:val, B:val, L:val, R:val, S:0
+      char cmd = input.charAt(0);
+      int value = input.substring(2).toInt();
+
+      switch (cmd) {
+        case 'F':
+          targetLeft = map(value, 0, 255, 1500, 1000);
+          targetRight = map(value, 0, 255, 1500, 1000);
+          break;
+
+        case 'B':
+          targetLeft = map(value, 0, 255, 1500, 2000);
+          targetRight = map(value, 0, 255, 1500, 2000);
+          break;
+
+        case 'L':
+          targetLeft = 1500;  // stop left
+          targetRight = map(value, 0, 255, 1500, 1000);  // right motor forward
+          break;
+
+        case 'R':
+          targetLeft = map(value, 0, 255, 1500, 1000);  // left motor forward
+          targetRight = 1500;  // stop right
+          break;
+
+        case 'S':
+          targetLeft = 1500;
+          targetRight = 1500;
+          break;
+      }
+    }
+  }
+
+  // Optional: stop motors if no signal for 2 sec
+  /*
+  if (millis() - lastCommandTime > timeoutDuration) {
+    targetLeft = 1500;
+    targetRight = 1500;
+  }
+  */
+
+  // Smooth ramping
+  if (currentLeft < targetLeft) currentLeft += 5;
+  else if (currentLeft > targetLeft) currentLeft -= 5;
+
+  if (currentRight < targetRight) currentRight += 5;
+  else if (currentRight > targetRight) currentRight -= 5;
+
+  motorLeft.writeMicroseconds(currentLeft);
+  motorRight.writeMicroseconds(currentRight);
+
+  delay(20); // Ramping interval
+}
