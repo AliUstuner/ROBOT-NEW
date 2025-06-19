@@ -1,0 +1,48 @@
+#include <Servo.h>
+
+Servo motorLeft, motorRight;
+int targetLeft = 1500, targetRight = 1500;
+int currentLeft = 1500, currentRight = 1500;
+
+void setup() {
+  Serial.begin(9600);
+  motorLeft.attach(9);
+  motorRight.attach(10);
+  motorLeft.writeMicroseconds(1500);
+  motorRight.writeMicroseconds(1500);
+}
+
+void loop() {
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n');
+    if (input.startsWith("F") || input.startsWith("B") || input.startsWith("L") || input.startsWith("R") || input.startsWith("S")) {
+      char cmd = input.charAt(0);
+      int value = input.substring(2).toInt();
+      switch (cmd) {
+        case 'F': targetLeft = targetRight = map(value, 0, 255, 1500, 1000); break;
+        case 'B': targetLeft = targetRight = map(value, 0, 255, 1500, 2000); break;
+        case 'L': targetLeft = 1500; targetRight = map(value, 0, 255, 1500, 1000); break;
+        case 'R': targetLeft = map(value, 0, 255, 1500, 1000); targetRight = 1500; break;
+        case 'S': targetLeft = targetRight = 1500; break;
+      }
+    }
+    else if (input.startsWith("D:")) {
+      int sep1 = input.indexOf(':', 2);
+      int left = input.substring(2, sep1).toInt();
+      int right = input.substring(sep1 + 1).toInt();
+      targetLeft = map(left, 0, 255, 1500, left >= 127 ? 2000 : 1000);
+      targetRight = map(right, 0, 255, 1500, right >= 127 ? 2000 : 1000);
+    }
+  }
+
+  // ramping
+  if (currentLeft < targetLeft) currentLeft += 5;
+  else if (currentLeft > targetLeft) currentLeft -= 5;
+
+  if (currentRight < targetRight) currentRight += 5;
+  else if (currentRight > targetRight) currentRight -= 5;
+
+  motorLeft.writeMicroseconds(currentLeft);
+  motorRight.writeMicroseconds(currentRight);
+  delay(20);
+}
