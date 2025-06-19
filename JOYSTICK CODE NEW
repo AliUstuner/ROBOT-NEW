@@ -1,0 +1,59 @@
+import pygame
+import serial
+import time
+import os
+
+# Correct path (no hardcoded /home/pi)
+MODE_FILE = os.path.expanduser("~/robot-mode.txt")
+
+def get_mode():
+    try:
+        with open(MODE_FILE, "r") as f:
+            return f.read().strip()
+    except:
+        return "JOYSTICK"
+
+def clamp(val, min_val=0, max_val=255):
+    return max(min(int(val), max_val), min_val)
+
+def send_dual(left, right):
+    if get_mode() != "JOYSTICK":
+        print("🔇 Joystick mode is OFF — not sending.")
+        return
+    left = clamp(left)
+    right = clamp(right)
+    command = f"D:{left}:{right}\n"
+    print("Sending:", command.strip())
+    arduino.write(command.encode())
+
+# Connect to Arduino
+arduino = serial.Serial('/dev/ttyACM0', 9600)
+time.sleep(2)
+
+# Init joystick
+pygame.init()
+pygame.joystick.init()
+joystick = pygame.joystick.Joystick(0)
+joystick.init()
+
+speed_scale = 127  # default 50%
+
+while True:
+    pygame.event.pump()
+
+    x = joystick.get_axis(0)
+    y = -joystick.get_axis(1)  # invert Y for forward/up
+
+    # Speed levels
+    if joystick.get_button(0): speed_scale = 51   # A
+    elif joystick.get_button(2): speed_scale = 89 # X
+    elif joystick.get_button(3): speed_scale = 127 # Y
+
+    if joystick.get_button(1):  # B = stop
+        send_dual(0, 0)
+    else:
+        left = (y - x) * speed_scale + 127
+        right = (y + x) * speed_scale + 127
+        send_dual(left, right)
+
+    time.sleep(0.1)
