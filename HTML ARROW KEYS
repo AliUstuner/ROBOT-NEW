@@ -1,0 +1,33 @@
+<script>
+  const slider = document.getElementById("speedSlider");
+  const speedVal = document.getElementById("speedVal");
+
+  slider.oninput = function () {
+    speedVal.innerText = this.value;
+  }
+
+  function send(cmd) {
+    fetch('/command', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cmd: cmd, speed: parseInt(slider.value) })
+    });
+  }
+
+  // Handle key press
+  document.addEventListener('keydown', (e) => {
+    switch (e.key) {
+      case 'ArrowUp': send('F'); break;
+      case 'ArrowDown': send('B'); break;
+      case 'ArrowLeft': send('L'); break;
+      case 'ArrowRight': send('R'); break;
+    }
+  });
+
+  // Handle key release
+  document.addEventListener('keyup', (e) => {
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      send('S');
+    }
+  });
+</script>
