@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Robot Control</title>
+  <script>
+    function sendCommand(cmd) {
+      const speed = document.getElementById('speed').value;
+      fetch('/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cmd, speed })
+      });
+    }
+
+    function setJoystickMode(enable) {
+      fetch('/set-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: enable ? 'JOYSTICK' : 'WEB' })
+      });
+    }
+  </script>
+</head>
+<body>
+  <h2>Robot Control</h2>
+  <input type="range" id="speed" min="0" max="255" value="127"><br><br>
+  <button onclick="sendCommand('F')">Forward</button>
+  <button onclick="sendCommand('B')">Backward</button><br>
+  <button onclick="sendCommand('L')">Left</button>
+  <button onclick="sendCommand('R')">Right</button><br>
+  <button onclick="sendCommand('S')">Stop</button><br><br>
+  <button onclick="setJoystickMode(false)">Turn OFF Joystick</button>
+  <button onclick="setJoystickMode(true)">Turn ON Joystick</button>
+</body>
+</html>
