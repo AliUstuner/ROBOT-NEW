@@ -1,0 +1,14 @@
+[Unit]
+Description=Robot Web Controller
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/pi/robot-web/app.py
+WorkingDirectory=/home/pi/robot-web
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
+
+[Install]
+WantedBy=multi-user.target
