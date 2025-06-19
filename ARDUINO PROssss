@@ -1,0 +1,50 @@
+#include <Servo.h>
+
+Servo motorLeft;
+Servo motorRight;
+
+void setup() {
+  motorLeft.attach(9);   // Left motor PWM pin
+  motorRight.attach(10); // Right motor PWM pin
+  Serial.begin(9600);
+}
+
+void loop() {
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n'); // e.g., "F:180"
+    char cmd = input.charAt(0);
+    int colonIndex = input.indexOf(':');
+    int speed = 255;
+
+    if (colonIndex != -1) {
+      speed = input.substring(colonIndex + 1).toInt();
+    }
+
+    switch (cmd) {
+      case 'F': // Move Forward
+        motorLeft.writeMicroseconds(map(speed, 0, 255, 1500, 1000));  // reverse signal
+        motorRight.writeMicroseconds(map(speed, 0, 255, 1500, 1000));
+        break;
+
+      case 'B': // Move Backward
+        motorLeft.writeMicroseconds(map(speed, 0, 255, 1500, 2000));  // forward signal
+        motorRight.writeMicroseconds(map(speed, 0, 255, 1500, 2000));
+        break;
+
+      case 'L': // Turn Left (right motor forward, left motor backward)
+        motorLeft.writeMicroseconds(map(speed, 0, 255, 1500, 2000));  // left motor forward
+        motorRight.writeMicroseconds(map(speed, 0, 255, 1500, 1000)); // right motor backward
+        break;
+
+      case 'R': // Turn Right (left motor forward, right motor backward)
+        motorLeft.writeMicroseconds(map(speed, 0, 255, 1500, 1000));  // left motor backward
+        motorRight.writeMicroseconds(map(speed, 0, 255, 1500, 2000)); // right motor forward
+        break;
+
+      case 'S': // Stop
+        motorLeft.writeMicroseconds(1500);
+        motorRight.writeMicroseconds(1500);
+        break;
+    }
+  }
+}
