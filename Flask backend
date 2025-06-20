@@ -1,0 +1,49 @@
+from flask import Flask, render_template, Response, request, jsonify
+import cv2
+import time
+import serial
+
+app = Flask(__name__)
+arduino = serial.Serial('/dev/ttyACM0', 9600)
+time.sleep(2)
+
+# Change to match your cameras
+front_camera = cv2.VideoCapture(2)
+rear_camera = cv2.VideoCapture(3)
+
+for cam in (front_camera, rear_camera):
+    cam.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/command', methods=['POST'])
+def command():
+    data = request.get_json()
+    cmd = data.get('command', 'S')
+    speed = int(data.get('speed', 150))
+    arduino.write(f"{cmd}:{speed}\n".encode())
+    return jsonify({'status': 'OK'})
+
+def generate(camera):
+    while True:
+        success, frame = camera.read()
+        if not success:
+            continue
+        _, buffer = cv2.imencode('.jpg', frame)
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+        time.sleep(0.03)
+
+@app.route('/video_feed_front')
+def video_feed_front():
+    return Response(generate(front_camera), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/video_feed_rear')
+def video_feed_rear():
+    return Response(generate(rear_camera), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
