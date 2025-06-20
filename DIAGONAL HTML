@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Robot Control Panel</title>
+  <style>
+    button {
+      padding: 10px 20px;
+      font-size: 20px;
+      margin: 5px;
+    }
+    .controls {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .camera-section {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 30px;
+    }
+    .camera {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1 style="text-align:center;">🤖 Robot Web Control Panel</h1>
+
+  <div class="controls">
+    <button onmousedown="hold('F')" onmouseup="release()">↑ Forward</button><br>
+    <button onmousedown="hold('L')" onmouseup="release()">← Left</button>
+    <button onclick="send('S')">Stop</button>
+    <button onmousedown="hold('R')" onmouseup="release()">→ Right</button><br>
+    <button onmousedown="hold('B')" onmouseup="release()">↓ Backward</button>
+  </div>
+
+  <div style="text-align:center; margin-top:20px;">
+    <label>Speed:</label>
+    <input type="range" min="0" max="255" value="200" id="speedSlider">
+    <span id="speedVal">200</span>
+  </div>
+
+  <div class="camera-section">
+    <div class="camera">
+      <h3>🔴 Front Camera</h3>
+      <img src="{{ url_for('video_feed') }}" width="400" height="300">
+    </div>
+
+    <div class="camera">
+      <h3>🔵 Rear Camera</h3>
+      <img src="{{ url_for('rear_feed') }}" width="400" height="300">
+    </div>
+  </div>
+
+  <script>
+    const slider = document.getElementById("speedSlider");
+    const speedVal = document.getElementById("speedVal");
+    let keys = {};
+
+    slider.oninput = function () {
+      speedVal.innerText = this.value;
+    };
+
+    function sendCombo() {
+      let cmd = '';
+      if (keys['ArrowUp']) cmd += 'F';
+      if (keys['ArrowDown']) cmd += 'B';
+      if (keys['ArrowLeft']) cmd += 'L';
+      if (keys['ArrowRight']) cmd += 'R';
+
+      send(cmd || 'S'); // default to Stop
+    }
+
+    document.addEventListener('keydown', (e) => {
+      keys[e.key] = true;
+      sendCombo();
+    });
+
+    document.addEventListener('keyup', (e) => {
+      delete keys[e.key];
+      sendCombo();
+    });
+
+    function send(cmd) {
+      fetch('/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cmd: cmd, speed: parseInt(slider.value) })
+      });
+    }
+
+    function hold(cmd) {
+      keys[cmd] = true;
+      sendCombo();
+    }
+
+    function release() {
+      keys = {};
+      send("S");
+    }
+  </script>
+</body>
+</html>
