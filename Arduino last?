@@ -1,0 +1,52 @@
+#include <Servo.h>
+
+Servo motorLeft;
+Servo motorRight;
+
+void setup() {
+  Serial.begin(9600);
+  motorLeft.attach(9);   // left motor PWM
+  motorRight.attach(10); // right motor PWM
+}
+
+void loop() {
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n'); // Ex: "F:150"
+    char cmd = input.charAt(0);
+    int speed = 150; // default
+
+    int colonIndex = input.indexOf(':');
+    if (colonIndex != -1) {
+      speed = input.substring(colonIndex + 1).toInt();
+    }
+
+    int leftSpeed = 1500;
+    int rightSpeed = 1500;
+
+    switch (cmd) {
+      case 'F':
+        leftSpeed = map(speed, 0, 255, 1500, 1000);
+        rightSpeed = map(speed, 0, 255, 1500, 1000);
+        break;
+      case 'B':
+        leftSpeed = map(speed, 0, 255, 1500, 2000);
+        rightSpeed = map(speed, 0, 255, 1500, 2000);
+        break;
+      case 'L':
+        leftSpeed = map(speed, 0, 255, 1500, 2000);
+        rightSpeed = map(speed, 0, 255, 1500, 1000);
+        break;
+      case 'R':
+        leftSpeed = map(speed, 0, 255, 1500, 1000);
+        rightSpeed = map(speed, 0, 255, 1500, 2000);
+        break;
+      case 'S':
+        leftSpeed = 1500;
+        rightSpeed = 1500;
+        break;
+    }
+
+    motorLeft.writeMicroseconds(leftSpeed);
+    motorRight.writeMicroseconds(rightSpeed);
+  }
+}
