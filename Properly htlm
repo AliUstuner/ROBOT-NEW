@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Robot Control Panel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .button {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 16px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background-color: #555;
+        }
+
+        .camera-section {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 40px;
+        }
+
+        .camera-view {
+            text-align: center;
+        }
+
+        .speed-container {
+            margin: 20px 0;
+        }
+
+        #speedValue {
+            font-weight: bold;
+        }
+
+        img {
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🤖 Robot Control Panel</h1>
+
+    <!-- Control Buttons -->
+    <div>
+        <button class="button" onclick="sendCommand('F')">↑ Forward</button><br>
+        <button class="button" onclick="sendCommand('L')">← Left</button>
+        <button class="button" onclick="sendCommand('S')">⏹ Stop</button>
+        <button class="button" onclick="sendCommand('R')">→ Right</button><br>
+        <button class="button" onclick="sendCommand('B')">↓ Backward</button>
+    </div>
+
+    <!-- Speed Slider -->
+    <div class="speed-container">
+        <label for="speed">Speed: <span id="speedValue">{{ speed }}</span></label><br>
+        <input type="range" id="speed" min="0" max="255" value="{{ speed }}" oninput="updateSpeedLabel(this.value)">
+    </div>
+
+    <!-- Camera Feeds -->
+    <div class="camera-section">
+        <div class="camera-view">
+            <h3 style="color: red;">🔴 Front Camera</h3>
+            <img src="{{ url_for('video_feed_front') }}" width="640" height="480">
+        </div>
+        <div class="camera-view">
+            <h3 style="color: blue;">🔵 Rear Camera</h3>
+            <img src="{{ url_for('video_feed_rear') }}" width="640" height="480">
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        function updateSpeedLabel(val) {
+            document.getElementById("speedValue").innerText = val;
+        }
+
+        function sendCommand(cmd) {
+            const speed = document.getElementById("speed").value;
+            fetch("/command", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: `cmd=${cmd}&speed=${speed}`,
+            });
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowUp') sendCommand('F');
+            if (e.key === 'ArrowDown') sendCommand('B');
+            if (e.key === 'ArrowLeft') sendCommand('L');
+            if (e.key === 'ArrowRight') sendCommand('R');
+        });
+
+        document.addEventListener('keyup', function(e) {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                sendCommand('S');
+            }
+        });
+    </script>
+
+</body>
+</html>
