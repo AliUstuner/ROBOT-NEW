@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Robot Controller</title>
+    <style>
+        body { font-family: Arial; text-align: center; }
+        .camera-row { display: flex; justify-content: center; gap: 30px; margin-top: 20px; }
+        .camera-feed img { width: 320px; height: 240px; border: 2px solid #ccc; }
+        button { margin: 5px; padding: 10px 20px; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+<h1>🤖 Robot Control Panel</h1>
+
+<div>
+    <button onclick="send('F')">↑ Forward</button><br>
+    <button onclick="send('L')">← Left</button>
+    <button onclick="send('S')">⏹ Stop</button>
+    <button onclick="send('R')">→ Right</button><br>
+    <button onclick="send('B')">↓ Backward</button><br><br>
+
+    <label>Speed:
+        <input type="range" id="speed" min="0" max="255" value="150" onchange="updateSpeed(this.value)">
+        <span id="speedValue">150</span>
+    </label>
+</div>
+
+<div class="camera-row">
+    <div class="camera-feed">
+        <h3>🔴 Front Camera</h3>
+        <img src="{{ url_for('video_feed_front') }}">
+    </div>
+    <div class="camera-feed">
+        <h3>🔵 Rear Camera</h3>
+        <img src="{{ url_for('video_feed_rear') }}">
+    </div>
+</div>
+
+<script>
+let speed = 150;
+document.addEventListener('keydown', e => {
+    if (e.key === "ArrowUp") send("F");
+    else if (e.key === "ArrowDown") send("B");
+    else if (e.key === "ArrowLeft") send("L");
+    else if (e.key === "ArrowRight") send("R");
+});
+document.addEventListener('keyup', () => send("S"));
+
+function send(cmd) {
+    fetch("/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `cmd=${cmd}&speed=${speed}`
+    });
+}
+
+function updateSpeed(val) {
+    speed = val;
+    document.getElementById('speedValue').innerText = val;
+}
+</script>
+
+</body>
+</html>
