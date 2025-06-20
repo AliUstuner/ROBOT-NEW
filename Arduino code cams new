@@ -1,0 +1,69 @@
+#include <Servo.h>
+
+Servo motorLeft;
+Servo motorRight;
+
+void setup() {
+  Serial.begin(9600);
+  motorLeft.attach(9);
+  motorRight.attach(10);
+}
+
+void stopMotors() {
+  motorLeft.writeMicroseconds(1500);
+  motorRight.writeMicroseconds(1500);
+}
+
+void loop() {
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n');
+    char cmd = input.charAt(0);
+    int colonIndex = input.indexOf(':');
+    int speed = 150;
+
+    if (colonIndex != -1) {
+      speed = input.substring(colonIndex + 1).toInt();
+    }
+
+    int forwardPWM = map(speed, 0, 255, 1500, 2000);
+    int reversePWM = map(speed, 0, 255, 1500, 1000);
+
+    switch (cmd) {
+      case 'F':
+        motorLeft.writeMicroseconds(forwardPWM);
+        motorRight.writeMicroseconds(forwardPWM);
+        break;
+      case 'B':
+        motorLeft.writeMicroseconds(reversePWM);
+        motorRight.writeMicroseconds(reversePWM);
+        break;
+      case 'L':
+        motorLeft.writeMicroseconds(reversePWM);
+        motorRight.writeMicroseconds(forwardPWM);
+        break;
+      case 'R':
+        motorLeft.writeMicroseconds(forwardPWM);
+        motorRight.writeMicroseconds(reversePWM);
+        break;
+      case 'S':
+        stopMotors();
+        break;
+      case 'FR':  // forward-right
+        motorLeft.writeMicroseconds(forwardPWM);
+        motorRight.writeMicroseconds(1500);
+        break;
+      case 'FL':  // forward-left
+        motorLeft.writeMicroseconds(1500);
+        motorRight.writeMicroseconds(forwardPWM);
+        break;
+      case 'BR':  // backward-right
+        motorLeft.writeMicroseconds(reversePWM);
+        motorRight.writeMicroseconds(1500);
+        break;
+      case 'BL':  // backward-left
+        motorLeft.writeMicroseconds(1500);
+        motorRight.writeMicroseconds(reversePWM);
+        break;
+    }
+  }
+}
