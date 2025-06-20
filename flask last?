@@ -1,0 +1,64 @@
+from flask import Flask, render_template, Response, request
+import cv2
+import serial
+import threading
+import time
+
+app = Flask(__name__)
+
+# Arduino serial setup
+arduino = serial.Serial('/dev/ttyACM0', 9600)
+time.sleep(2)
+
+# Motor state
+motor_command = 'S'
+speed = 150
+
+# Camera setup
+cam_front = cv2.VideoCapture(2)
+cam_back = cv2.VideoCapture(1)
+
+def generate_camera(camera):
+    while True:
+        ret, frame = camera.read()
+        if not ret:
+            continue
+        _, buffer = cv2.imencode('.jpg', frame)
+        frame_bytes = buffer.tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/video_feed/front')
+def video_feed_front():
+    return Response(generate_camera(cam_front), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/video_feed/back')
+def video_feed_back():
+    return Response(generate_camera(cam_back), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/command', methods=['POST'])
+def command():
+    global motor_command
+    data = request.json
+    motor_command = data['command']
+    send_to_arduino()
+    return 'OK'
+
+@app.route('/speed', methods=['POST'])
+def set_speed():
+    global speed
+    data = request.json
+    speed = int(data['speed'])
+    send_to_arduino()
+    return 'OK'
+
+def send_to_arduino():
+    if arduino and arduino.is_open:
+        arduino.write(f"{motor_command}:{speed}\n".encode())
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=False)
