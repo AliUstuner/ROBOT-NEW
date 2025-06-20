@@ -1,0 +1,64 @@
+from flask import Flask, render_template, Response, request
+import cv2
+import serial
+import threading
+import time
+
+# Setup serial connection to Arduino
+arduino = serial.Serial('/dev/ttyACM0', 9600)
+
+# Set camera devices explicitly
+front_cam = cv2.VideoCapture('/dev/video2')
+rear_cam = cv2.VideoCapture('/dev/video1')
+
+# Lower resolution for stability
+for cam in [front_cam, rear_cam]:
+    cam.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+    cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
+
+app = Flask(__name__)
+current_command = "S:0"
+lock = threading.Lock()
+
+def send_command():
+    global current_command
+    while True:
+        with lock:
+            arduino.write((current_command + "\n").encode())
+        time.sleep(0.1)
+
+threading.Thread(target=send_command, daemon=True).start()
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/command', methods=['POST'])
+def command():
+    global current_command
+    data = request.form['cmd']
+    speed = request.form['speed']
+    with lock:
+        current_command = f"{data}:{speed}"
+    return '', 200
+
+def gen_frames(camera):
+    while True:
+        success, frame = camera.read()
+        if not success:
+            break
+        else:
+            _, buffer = cv2.imencode('.jpg', frame)
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+
+@app.route('/video_feed_front')
+def video_feed_front():
+    return Response(gen_frames(front_cam), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/video_feed_rear')
+def video_feed_rear():
+    return Response(gen_frames(rear_cam), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0')
