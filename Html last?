@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Robot Control Panel</title>
+    <style>
+        body { font-family: Arial; text-align: center; }
+        button { padding: 12px 24px; margin: 5px; font-size: 18px; }
+        .cameras { display: flex; justify-content: center; gap: 30px; margin-top: 20px; }
+        .camera-block { text-align: center; }
+        img { width: 480px; height: auto; border: 2px solid black; }
+    </style>
+</head>
+<body>
+    <h1>🤖 Robot Control Panel</h1>
+
+    <div>
+        <button onclick="sendCommand('F')">↑ Forward</button><br>
+        <button onclick="sendCommand('L')">← Left</button>
+        <button onclick="sendCommand('S')">⏹ Stop</button>
+        <button onclick="sendCommand('R')">→ Right</button><br>
+        <button onclick="sendCommand('B')">↓ Backward</button>
+    </div>
+
+    <p>Speed: <span id="speedValue">150</span></p>
+    <input type="range" min="0" max="255" value="150" oninput="updateSpeed(this.value)">
+
+    <div class="cameras">
+        <div class="camera-block">
+            <p style="color: red;">🔴 Front Camera</p>
+            <img src="/video_feed/front" id="camFront">
+        </div>
+        <div class="camera-block">
+            <p style="color: blue;">🔵 Rear Camera</p>
+            <img src="/video_feed/back" id="camBack">
+        </div>
+    </div>
+
+    <script>
+        let speed = 150;
+
+        function sendCommand(cmd) {
+            fetch('/command', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: cmd })
+            });
+        }
+
+        function updateSpeed(val) {
+            speed = val;
+            document.getElementById('speedValue').innerText = val;
+            fetch('/speed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ speed: val })
+            });
+        }
+
+        // Keyboard control
+        document.addEventListener('keydown', function (e) {
+            switch (e.key) {
+                case "ArrowUp": sendCommand('F'); break;
+                case "ArrowDown": sendCommand('B'); break;
+                case "ArrowLeft": sendCommand('L'); break;
+                case "ArrowRight": sendCommand('R'); break;
+            }
+        });
+        document.addEventListener('keyup', function () {
+            sendCommand('S');
+        });
+    </script>
+</body>
+</html>
