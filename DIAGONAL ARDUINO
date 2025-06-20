@@ -1,0 +1,58 @@
+#include <Servo.h>
+
+Servo motorLeft;
+Servo motorRight;
+
+void setup() {
+  motorLeft.attach(9);   // Left motor PWM pin
+  motorRight.attach(10); // Right motor PWM pin
+  Serial.begin(9600);
+}
+
+void loop() {
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n');
+    int colonIndex = input.indexOf(':');
+    String cmd = input.substring(0, colonIndex);
+    int speed = input.substring(colonIndex + 1).toInt();
+
+    int leftSpeed = 1500;
+    int rightSpeed = 1500;
+
+    // FORWARD
+    if (cmd.indexOf("F") != -1) {
+      leftSpeed = map(speed, 0, 255, 1500, 1000);
+      rightSpeed = map(speed, 0, 255, 1500, 1000);
+    }
+
+    // BACKWARD
+    if (cmd.indexOf("B") != -1) {
+      leftSpeed = map(speed, 0, 255, 1500, 2000);
+      rightSpeed = map(speed, 0, 255, 1500, 2000);
+    }
+
+    // TURN LEFT: Left motor slows or reverses
+    if (cmd.indexOf("L") != -1) {
+      leftSpeed = map(speed, 0, 255, 1500, 2000);   // reverse left
+      rightSpeed = map(speed, 0, 255, 1500, 1000);  // forward right
+    }
+
+    // TURN RIGHT: Right motor slows or reverses
+    if (cmd.indexOf("R") != -1) {
+      leftSpeed = map(speed, 0, 255, 1500, 1000);   // forward left
+      rightSpeed = map(speed, 0, 255, 1500, 2000);  // reverse right
+    }
+
+    // STOP
+    if (cmd == "S") {
+      leftSpeed = 1500;
+      rightSpeed = 1500;
+    }
+
+    // Clamp and send PWM
+    leftSpeed = constrain(leftSpeed, 1000, 2000);
+    rightSpeed = constrain(rightSpeed, 1000, 2000);
+    motorLeft.writeMicroseconds(leftSpeed);
+    motorRight.writeMicroseconds(rightSpeed);
+  }
+}
