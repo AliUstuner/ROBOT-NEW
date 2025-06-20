@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Robot Control Panel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+        .control-panel {
+            margin: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+        }
+        .camera-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .camera {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .camera img {
+            width: 480px;
+            height: 360px;
+            border: 2px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>🤖 Robot Control Panel</h1>
+
+    <div class="control-panel">
+        <button onclick="sendCommand('F')">↑ Forward</button><br>
+        <button onclick="sendCommand('L')">← Left</button>
+        <button onclick="sendCommand('S')">Stop</button>
+        <button onclick="sendCommand('R')">→ Right</button><br>
+        <button onclick="sendCommand('B')">↓ Backward</button><br><br>
+
+        <label for="speedRange">Speed:</label>
+        <input type="range" min="0" max="255" value="150" id="speedRange" oninput="updateSpeed(this.value)">
+        <span id="speedValue">150</span>
+    </div>
+
+    <div class="camera-container">
+        <div class="camera">
+            <h3 style="color:red;">🔴 Front Camera</h3>
+            <img src="{{ url_for('video_feed_front') }}">
+        </div>
+        <div class="camera">
+            <h3 style="color:blue;">🔵 Rear Camera</h3>
+            <img src="{{ url_for('video_feed_rear') }}">
+        </div>
+    </div>
+
+    <script>
+        let keysPressed = {};
+        let speed = 150;
+
+        function sendCommand(command) {
+            fetch('/command', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: command, speed: speed })
+            });
+        }
+
+        function updateSpeed(val) {
+            speed = parseInt(val);
+            document.getElementById("speedValue").innerText = val;
+        }
+
+        document.addEventListener("keydown", function(event) {
+            keysPressed[event.key] = true;
+
+            if (keysPressed["ArrowUp"] && keysPressed["ArrowRight"]) {
+                sendCommand("FR");
+            } else if (keysPressed["ArrowUp"] && keysPressed["ArrowLeft"]) {
+                sendCommand("FL");
+            } else if (keysPressed["ArrowDown"] && keysPressed["ArrowRight"]) {
+                sendCommand("BR");
+            } else if (keysPressed["ArrowDown"] && keysPressed["ArrowLeft"]) {
+                sendCommand("BL");
+            } else if (event.key === "ArrowUp") {
+                sendCommand("F");
+            } else if (event.key === "ArrowDown") {
+                sendCommand("B");
+            } else if (event.key === "ArrowLeft") {
+                sendCommand("L");
+            } else if (event.key === "ArrowRight") {
+                sendCommand("R");
+            }
+        });
+
+        document.addEventListener("keyup", function(event) {
+            delete keysPressed[event.key];
+            sendCommand("S");
+        });
+    </script>
+</body>
+</html>
